@@ -8,6 +8,10 @@ compatibility_date = "2024-11-24"
 CLERK_PUBLISHABLE_KEY = "pk_test_Z2xhZC1ncnViLTMzLmNsZXJrLmFjY291bnRzLmRldiQ"
 FRONTEND_URL = "http://localhost:5173"
 
+[env.production]
+CLERK_PUBLISHABLE_KEY = "pk_live_Y2xlcmsucXVvdGVzLmZyYW5jaXNjb3NvbGlzLmNsJA"
+FRONTEND_URL = "https://quotes.franciscosolis.cl"
+
 # [[kv_namespaces]]
 # binding = "MY_KV_NAMESPACE"
 # id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
@@ -27,8 +31,3 @@ database_id = "b9172042-d95d-4db3-872d-b28693cf4be9"
 [observability]
 enabled = true
 head_sampling_rate = 1
-
-[env.production]
-[vars]
-CLERK_PUBLISHABLE_KEY = "pk_live_Y2xlcmsucXVvdGVzLmZyYW5jaXNjb3NvbGlzLmNsJA"
-FRONTEND_URL = "https://quotes.franciscosolis.cl"
