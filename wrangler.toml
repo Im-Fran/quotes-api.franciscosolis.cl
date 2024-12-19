@@ -19,7 +19,11 @@ head_sampling_rate = 1
 CLERK_PUBLISHABLE_KEY = "pk_live_Y2xlcmsucXVvdGVzLmZyYW5jaXNjb3NvbGlzLmNsJA"
 FRONTEND_URL = "https://quotes.franciscosolis.cl"
 
-[env.production.d1_databases]
+[[env.production.d1_databases]]
 binding = "DB"
 database_name = "quotes"
 database_id = "b9172042-d95d-4db3-872d-b28693cf4be9"
+
+[env.production.observability]
+enabled = true
+head_sampling_rate = 1
