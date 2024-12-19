@@ -1,20 +1,27 @@
 import {createMiddleware} from "hono/factory";
 import {getAuth} from "@hono/clerk-auth";
-import {HTTPException} from "hono/http-exception";
 
 const can = (permission: string) => createMiddleware(async (c, next) => {
-  const authUser = getAuth(c)
-  if(authUser?.userId == null) throw new HTTPException(401, { message: 'Not authenticated' })
+  const clerkAuth = getAuth(c)
+  if(!clerkAuth?.userId) {
+    return c.json({
+      error: 'Por favor inicia sesión'
+    }, 401)
+  }
 
   const prisma = c.get('prisma')
   const assignedPermission = await prisma.assignedPermissions.findFirst({
     where: {
-      userId: authUser.userId,
+      userId: clerkAuth.userId,
       permission,
     }
   })
 
-  if(assignedPermission == null) throw new HTTPException(403, { message: 'Not authorized' })
+  if(assignedPermission == null) {
+    return c.json({
+      error: 'No tienes permisos para realizar esta acción'
+    }, 403);
+  }
 
   return await next()
 })

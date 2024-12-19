@@ -1,7 +1,6 @@
-import {Context, Hono} from "hono";
+import {Hono} from "hono";
 import {getAuth} from "@hono/clerk-auth";
 import can from "@/middlewares/can";
-import {HTTPException} from "hono/http-exception";
 import {getPrisma} from "@/lib/prisma";
 import {zValidator} from "@hono/zod-validator";
 import {z} from "zod";
@@ -10,7 +9,10 @@ const app = new Hono()
 
 app.get('/', async (c) => {
   const clerk = c.get('clerk')
-  const clerkAuth = validateAuth(c)
+  const clerkAuth = getAuth(c)
+  if(!clerkAuth?.userId) {
+    return c.json({error: 'Por favor inicia sesión'}, 401)
+  }
   const prisma = getPrisma(c)
   const skip = parseInt(c.req.query('skip') || '0') || 0
   const take = parseInt(c.req.query('take') || '10') || 10
@@ -77,7 +79,11 @@ app.use('/', can('quotes.create'))
     email: z.string().min(1).email(),
   })))
   .post('/', async (c) => {
-    const clerkAuth = validateAuth(c)
+    const clerkAuth = getAuth(c)
+    if(!clerkAuth?.userId) {
+      return c.json({error: 'Por favor inicia sesión'}, 401)
+    }
+
     const clerk = c.get('clerk')
     const prisma = getPrisma(c)
 
@@ -89,7 +95,7 @@ app.use('/', can('quotes.create'))
     })
 
     if(clientsFound.totalCount == 0) {
-      throw new HTTPException(404, { message: 'Cliente no encontrado' })
+      return c.json({error: 'No se encontró el cliente'}, 404)
     }
 
     const client = clientsFound.data[0]
@@ -110,18 +116,27 @@ app.use('/', can('quotes.create'))
   });
 
 app.get('/:id', async (c) => {
-  const { clerkAuth, id } = await validateAuthAndGetQuoteId(c)
+  const clerkAuth = getAuth(c)
+  if(!clerkAuth?.userId) {
+    return c.json({error: 'Por favor inicia sesión'}, 401)
+  }
+
+  const { id } = c.req.param()
+  if(!id || isNaN(parseInt(id))) {
+    return c.json({error: 'El id es requerido'}, 400)
+  }
+  const quoteId = parseInt(id)
   const prisma = getPrisma(c)
 
   const quote = await prisma.quote.findFirst({
     where: {
       OR: [
         {
-          id,
+          id: quoteId,
           clientId: clerkAuth.userId,
         },
         {
-          id,
+          id: quoteId,
           creatorId: clerkAuth.userId
         }
       ]
@@ -160,7 +175,16 @@ app.use('/:id', can('quotes.update'))
     description: z.string().min(1).max(255).optional(),
   })))
   .patch('/:id', async (c) => {
-    const { clerkAuth, id } = await validateAuthAndGetQuoteId(c)
+    const clerkAuth = getAuth(c)
+    if(!clerkAuth?.userId) {
+      return c.json({error: 'Por favor inicia sesión'}, 401)
+    }
+
+    const { id } = c.req.param()
+    if(!id || isNaN(parseInt(id))) {
+      return c.json({error: 'El id es requerido'}, 400)
+    }
+    const quoteId = parseInt(id)
     const prisma = getPrisma(c)
 
     // @ts-ignore
@@ -168,7 +192,7 @@ app.use('/:id', can('quotes.update'))
 
     const updatedQuote = await prisma.quote.update({
       where: {
-        id,
+        id: quoteId,
         creatorId: clerkAuth.userId
       },
       data: body,
@@ -182,22 +206,31 @@ app.use('/:id', can('quotes.update'))
 
 app.use('/:id', can('quotes.destroy'))
   .delete('/:id', async (c) => {
-    const { clerkAuth, id } = await validateAuthAndGetQuoteId(c)
+    const clerkAuth = getAuth(c)
+    if(!clerkAuth?.userId) {
+      return c.json({error: 'Por favor inicia sesión'}, 401)
+    }
+
+    const { id } = c.req.param()
+    if(!id || isNaN(parseInt(id))) {
+      return c.json({error: 'El id es requerido'}, 400)
+    }
+    const quoteId = parseInt(id)
     const prisma = getPrisma(c)
 
     const items = await prisma.item.findMany({
       where: {
-        quoteId: id,
+        quoteId,
       }
     });
 
     if(items.length > 0) {
-      throw new HTTPException(400, { message: 'No puedes eliminar una cotización con elementos!' })
+      return c.json({error: 'No se puede eliminar una cotización con elementos!'}, 400)
     }
 
     const deletedQuote = await prisma.quote.delete({
       where: {
-        id,
+        id: quoteId,
         creatorId: clerkAuth.userId
       },
       include: {
@@ -207,27 +240,5 @@ app.use('/:id', can('quotes.destroy'))
 
     return c.json({quote: deletedQuote}, deletedQuote == null ? 404 : 200)
   });
-
-const validateAuth = (c: Context) => {
-  const clerkAuth = getAuth(c)
-  if(!clerkAuth?.userId) throw new HTTPException(401, { message: 'Por favor inicia sesión' })
-
-  return clerkAuth
-}
-
-const validateAuthAndGetQuoteId = async (c: Context) => {
-  const clerkAuth = validateAuth(c)
-
-  const { id } = c.req.param()
-  if(!id) throw new HTTPException(400, { message: 'El id es requerido' })
-
-  const numericId = parseInt(id)
-  if(isNaN(numericId)) throw new HTTPException(400, { message: 'El id debe ser numérico' })
-
-  return {
-    clerkAuth,
-    id: numericId,
-  }
-}
 
 export default app
