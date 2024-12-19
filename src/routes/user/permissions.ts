@@ -7,7 +7,7 @@ const app = new Hono();
 
 app.get("/", async (c) => {
   const clerkAuth = getAuth(c)
-  if(!clerkAuth?.userId) throw new HTTPException(401, { message: 'Not authenticated' })
+  if(!clerkAuth?.userId) throw new HTTPException(401, { message: 'Por favor inicia sesión' })
   const clerkClient = c.get('clerk')
   const user = await clerkClient.users.getUser(clerkAuth.userId)
 
