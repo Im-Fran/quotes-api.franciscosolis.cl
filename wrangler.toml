@@ -1,0 +1,29 @@
+name = "quotes"
+main = "src/index.ts"
+compatibility_date = "2024-11-24"
+
+# compatibility_flags = [ "nodejs_compat" ]
+
+[vars]
+CLERK_PUBLISHABLE_KEY = "pk_test_Z2xhZC1ncnViLTMzLmNsZXJrLmFjY291bnRzLmRldiQ"
+FRONTEND_URL = "http://localhost:5173"
+
+# [[kv_namespaces]]
+# binding = "MY_KV_NAMESPACE"
+# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# [[r2_buckets]]
+# binding = "MY_BUCKET"
+# bucket_name = "my-bucket"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "quotes"
+database_id = "b9172042-d95d-4db3-872d-b28693cf4be9"
+
+# [ai]
+# binding = "AI"
+
+[observability]
+enabled = true
+head_sampling_rate = 1

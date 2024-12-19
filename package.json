@@ -1,0 +1,22 @@
+{
+  "name": "quotes",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --minify"
+  },
+  "dependencies": {
+    "@clerk/backend": "^1.18.0",
+    "@hono/clerk-auth": "^2.0.0",
+    "@hono/zod-validator": "^0.4.1",
+    "@prisma/adapter-d1": "^5.22.0",
+    "@prisma/client": "^6.1.0",
+    "hono": "^4.6.12",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241112.0",
+    "prisma": "^6.1.0",
+    "wrangler": "^3.91.0"
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+}

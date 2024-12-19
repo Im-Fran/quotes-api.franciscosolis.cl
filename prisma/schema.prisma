@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Quote {
+  id          Int      @id @default(autoincrement())
+
+  creatorId   String
+  clientId    String
+
+  name        String
+  description String
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  Comment Comment[]
+  Item Item[]
+}
+
+model Item {
+  id          Int      @id @default(autoincrement())
+
+  quote       Quote   @relation(fields: [quoteId], references: [id])
+  quoteId     Int
+
+  name        String
+  description String
+  amount      Float
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Comment {
+  id          Int      @id @default(autoincrement())
+
+  userId      String
+
+  quote       Quote   @relation(fields: [quoteId], references: [id])
+  quoteId     Int
+
+  parent      Comment? @relation("ChildComment", fields: [parentId], references: [id])
+  parentId    Int
+
+  content     String
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  Comment     Comment[] @relation("ChildComment")
+}
+
+model AssignedPermissions {
+  id          Int      @id @default(autoincrement())
+
+  userId      String
+  permission  String
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
