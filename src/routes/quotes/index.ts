@@ -89,7 +89,7 @@ app.use('/', can('quotes.create'))
     })
 
     if(clientsFound.totalCount == 0) {
-      throw new HTTPException(404, { message: 'Client not found' })
+      throw new HTTPException(404, { message: 'Cliente no encontrado' })
     }
 
     const client = clientsFound.data[0]
@@ -100,7 +100,10 @@ app.use('/', can('quotes.create'))
         clientId: client.id,
         name: body.name,
         description: body.description,
-      }
+      },
+      include: {
+        Item: true,
+      },
     })
 
     return c.json({quote}, 201)
@@ -123,20 +126,14 @@ app.get('/:id', async (c) => {
         }
       ]
     },
+    include: {
+      Item: true,
+    }
   })
 
   if(quote == null) {
     return c.json({quote: null, itemsSum: null}, 404);
   }
-
-  const itemsSum = await prisma.item.aggregate({
-    where: {
-      quoteId: id
-    },
-    _sum: {
-      amount: true
-    }
-  });
 
   const clerk = c.get('clerk')
   const creator = (await clerk.users.getUser(quote.creatorId))
@@ -154,7 +151,6 @@ app.get('/:id', async (c) => {
         avatar: client.imageUrl
       }
     },
-    itemsSum,
   })
 })
 
@@ -175,7 +171,10 @@ app.use('/:id', can('quotes.update'))
         id,
         creatorId: clerkAuth.userId
       },
-      data: body
+      data: body,
+      include: {
+        Item: true,
+      },
     })
 
     return c.json({quote: updatedQuote}, updatedQuote == null ? 404 : 200)
@@ -186,10 +185,23 @@ app.use('/:id', can('quotes.destroy'))
     const { clerkAuth, id } = await validateAuthAndGetQuoteId(c)
     const prisma = getPrisma(c)
 
+    const items = await prisma.item.findMany({
+      where: {
+        quoteId: id,
+      }
+    });
+
+    if(items.length > 0) {
+      throw new HTTPException(400, { message: 'No puedes eliminar una cotización con elementos!' })
+    }
+
     const deletedQuote = await prisma.quote.delete({
       where: {
         id,
         creatorId: clerkAuth.userId
+      },
+      include: {
+        Item: true,
       }
     })
 
@@ -198,7 +210,7 @@ app.use('/:id', can('quotes.destroy'))
 
 const validateAuth = (c: Context) => {
   const clerkAuth = getAuth(c)
-  if(!clerkAuth?.userId) throw new HTTPException(401, { message: 'Not authenticated' })
+  if(!clerkAuth?.userId) throw new HTTPException(401, { message: 'Por favor inicia sesión' })
 
   return clerkAuth
 }
@@ -207,10 +219,10 @@ const validateAuthAndGetQuoteId = async (c: Context) => {
   const clerkAuth = validateAuth(c)
 
   const { id } = c.req.param()
-  if(!id) throw new HTTPException(400, { message: 'Id is required' })
+  if(!id) throw new HTTPException(400, { message: 'El id es requerido' })
 
   const numericId = parseInt(id)
-  if(isNaN(numericId)) throw new HTTPException(400, { message: 'Id must be a number' })
+  if(isNaN(numericId)) throw new HTTPException(400, { message: 'El id debe ser numérico' })
 
   return {
     clerkAuth,
