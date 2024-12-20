@@ -99,6 +99,7 @@ app.use('/', can('quotes.create'))
     }
 
     const client = clientsFound.data[0]
+    const creator = await clerk.users.getUser(clerkAuth.userId)
 
     const quote = await prisma.quote.create({
       data: {
@@ -112,7 +113,20 @@ app.use('/', can('quotes.create'))
       },
     })
 
-    return c.json({quote}, 201)
+    return c.json({
+      quote: {
+        ...quote,
+        creator: {
+          name: creator.fullName,
+          avatar: creator.imageUrl
+        },
+
+        client: {
+          name: client.fullName,
+          avatar: client.imageUrl
+        }
+      }
+    }, 201)
   });
 
 app.get('/:id', async (c) => {
